@@ -1,0 +1,58 @@
+@model Velocidad.Models.CarreraModel
+
+@{
+    ViewData["Title"] = "Create";
+}
+
+<h1>Create</h1>
+
+<form asp-action="Create">
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    <table class="table table-striped">
+        <tr>
+            <th><label asp-for="DescripcionCarrera" class="control-label"></label></th>
+            <th></th>
+            <th></th>
+        </tr>
+        <tr>
+            <td>
+                <input asp-for="DescripcionCarrera" class="form-control" />
+                <span asp-validation-for="DescripcionCarrera" class="text-danger"></span>
+            </td>
+            <td></td>
+            <td></td>
+        </tr>
+        <tr>
+            <th></th>
+            <th><label asp-for="Corredor.SingleOrDefault().Minutos" class="control-label"></label></th>
+            <th><label asp-for="Corredor.SingleOrDefault().Segundos" class="control-label"></label></th>
+        </tr>
+        @for (var i = 0; i < 10; i++)
+        {
+            <tr>
+                <td>
+                    Corredor @(i + 1)
+                </td>
+                <td>
+                    <input asp-for="Corredor[i].Minutos" class="form-control" />
+                    <span asp-validation-for="Corredor.SingleOrDefault().Minutos" class="text-danger"></span>
+                </td>
+                <td>
+                    <input asp-for="Corredor[i].Segundos" class="form-control" />
+                    <span asp-validation-for="Corredor.SingleOrDefault().Segundos" class="text-danger"></span>
+                </td>
+            </tr>
+        }
+    </table>
+    <div class="form-group">
+        <input type="submit" value="Guardar" class="btn btn-primary" />
+    </div>
+</form>
+
+<div>
+    <a asp-action="Index">Back to List</a>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}
