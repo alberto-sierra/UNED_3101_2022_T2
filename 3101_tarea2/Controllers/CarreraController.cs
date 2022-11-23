@@ -22,8 +22,14 @@ namespace Velocidad.Controllers
         // GET: Carrera
         public async Task<IActionResult> Index()
         {
-            var velocidadContext = _context.Corredors.Include(c => c.IdCarreraNavigation);
-            return View(await velocidadContext.ToListAsync());
+            var carreraModel = _context.Carreras
+                .Join(_context.Corredors, ca => ca.Id, co => co.IdCarrera,
+                (ca, co) => new  { Carrera = ca, Corredor = co })
+                .GroupBy(c => new { c.Carrera.Id, c.Carrera.Descripcion })
+                .Select(c => new CarreraIndexViewModel { Id = c.Key.Id, Descripcion = c.Key.Descripcion, TotalCorredores = c.Count() })
+                .ToListAsync();
+
+            return View(await carreraModel);
         }
 
         // GET: Carrera/Details/5
@@ -34,15 +40,50 @@ namespace Velocidad.Controllers
                 return NotFound();
             }
 
-            var corredor = await _context.Corredors
-                .Include(c => c.IdCarreraNavigation)
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (corredor == null)
+            var corredores = await _context.Corredors
+                .Where(c => c.IdCarrera == id)
+                .Select(c => new CorredorDetalle
+                {
+                    Id = c.Id,
+                    Tiempo = c.Tiempo.Value,
+                    Velocidad = (decimal)(2000 / c.Tiempo.Value.TotalSeconds)
+                })
+                .ToListAsync();
+
+            if (corredores == null)
             {
                 return NotFound();
             }
 
-            return View(corredor);
+            var carreraDetalle = new CarreraDetailViewModel
+            {
+                Id = id.Value,
+                CorredorDetalle = corredores,
+                MayorVelocidad = 0,
+                MenorVelocidad = 3600,
+                PromedioVelocidad = 0
+            };
+
+            decimal sumaVelocidad = 0;
+
+            foreach (var corredor in corredores)
+            {
+                sumaVelocidad += corredor.Velocidad;
+
+                if (corredor.Velocidad > carreraDetalle.MayorVelocidad)
+                {
+                    carreraDetalle.MayorVelocidad = corredor.Velocidad;
+                }
+
+                if (corredor.Velocidad < carreraDetalle.MenorVelocidad)
+                {
+                    carreraDetalle.MenorVelocidad = corredor.Velocidad;
+                }
+            }
+
+            carreraDetalle.PromedioVelocidad = sumaVelocidad / corredores.Count();
+
+            return View(carreraDetalle);
         }
 
         // GET: Carrera/Create
@@ -56,11 +97,11 @@ namespace Velocidad.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(CarreraModel carreraModel)
+        public async Task<IActionResult> Create(CarreraViewModel carreraViewModel)
         {
             var carrera = new Carrera
             {
-                Descripcion = carreraModel.DescripcionCarrera
+                Descripcion = carreraViewModel.DescripcionCarrera
             };
 
             _context.Carreras.Add(carrera);
@@ -68,7 +109,7 @@ namespace Velocidad.Controllers
 
             var corredores = Array.Empty<Corredor>();
 
-            foreach (var corredor in carreraModel.Corredor)
+            foreach (var corredor in carreraViewModel.Corredor)
             {
                 if (corredor.Minutos != null && corredor.Segundos != null)
                 {
@@ -83,95 +124,12 @@ namespace Velocidad.Controllers
 
             await _context.SaveChangesAsync();
 
-            return View();
-        }
-
-        // GET: Carrera/Edit/5
-        public async Task<IActionResult> Edit(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var corredor = await _context.Corredors.FindAsync(id);
-            if (corredor == null)
-            {
-                return NotFound();
-            }
-            ViewData["IdCarrera"] = new SelectList(_context.Carreras, "Id", "Id", corredor.IdCarrera);
-            return View(corredor);
-        }
-
-        // POST: Carrera/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,IdCarrera,Tiempo")] Corredor corredor)
-        {
-            if (id != corredor.Id)
-            {
-                return NotFound();
-            }
-
-            if (ModelState.IsValid)
-            {
-                try
-                {
-                    _context.Update(corredor);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!CorredorExists(corredor.Id))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
-                return RedirectToAction(nameof(Index));
-            }
-            ViewData["IdCarrera"] = new SelectList(_context.Carreras, "Id", "Id", corredor.IdCarrera);
-            return View(corredor);
-        }
-
-        // GET: Carrera/Delete/5
-        public async Task<IActionResult> Delete(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var corredor = await _context.Corredors
-                .Include(c => c.IdCarreraNavigation)
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (corredor == null)
-            {
-                return NotFound();
-            }
-
-            return View(corredor);
-        }
-
-        // POST: Carrera/Delete/5
-        [HttpPost, ActionName("Delete")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
-        {
-            var corredor = await _context.Corredors.FindAsync(id);
-            _context.Corredors.Remove(corredor);
-            await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
 
-        private bool CorredorExists(int id)
+        private bool CarreraExists(int id)
         {
-            return _context.Corredors.Any(e => e.Id == id);
+            return _context.Carreras.Any(e => e.Id == id);
         }
     }
 }
