@@ -24,8 +24,8 @@
         </tr>
         <tr>
             <th></th>
-            <th><label asp-for="Corredor.SingleOrDefault().Minutos" class="control-label"></label></th>
-            <th><label asp-for="Corredor.SingleOrDefault().Segundos" class="control-label"></label></th>
+            <th><label asp-for="Corredor.First().Minutos" class="control-label"></label></th>
+            <th><label asp-for="Corredor.First().Segundos" class="control-label"></label></th>
         </tr>
         @for (var i = 0; i < 10; i++)
         {
@@ -35,11 +35,11 @@
                 </td>
                 <td>
                     <input asp-for="Corredor[i].Minutos" class="form-control" />
-                    <span asp-validation-for="Corredor.SingleOrDefault().Minutos" class="text-danger"></span>
+                    <span asp-validation-for="Corredor.First().Minutos" class="text-danger"></span>
                 </td>
                 <td>
                     <input asp-for="Corredor[i].Segundos" class="form-control" />
-                    <span asp-validation-for="Corredor.SingleOrDefault().Segundos" class="text-danger"></span>
+                    <span asp-validation-for="Corredor.First().Segundos" class="text-danger"></span>
                 </td>
             </tr>
         }
@@ -50,7 +50,7 @@
 </form>
 
 <div>
-    <a asp-action="Index">Back to List</a>
+    <a asp-action="Index">Regresar</a>
 </div>
 
 @section Scripts {

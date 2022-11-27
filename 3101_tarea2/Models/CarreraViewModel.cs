@@ -8,7 +8,8 @@ namespace Velocidad.Models
     {
         public int Id { get; set; }
         [Display(Name = "Descripción")]
-        public string? DescripcionCarrera { get; set; }
+        [MaxLength (100)]
+        public string DescripcionCarrera { get; set; }
         public List<CorredorModel> Corredor { get; set; }
     }
 
